@@ -1,15 +1,18 @@
 // Calendar
 // Source unknown
 let
-    // configurations start
-    Today=Date.From(DateTime.LocalNow()), // today's date
+    // CONFIGURATION START
+    Today = Date.From(DateTime.LocalNow()), // today's date
+
     FromYear = 2019, // Basically only parameter you need to change, the starting year
-    ToYear=Date.Year(Today), // set the end year of the date dimension. dates end at 31st of December of this year
-    StartofFiscalYear=7, // set the month number that is start of the financial year. example; if fiscal year start is July, value is 7
-    firstDayofWeek=Day.Monday, // set the week's start day, values: Day.Monday, Day, Sunday....
-    // configuration end
-    FromDate=#date(FromYear,1,1),
-    ToDate=#date(ToYear,12,31),
+    ToYear = Date.Year(Today), // set the end year of the date dimension. dates end at 31st of December of this year
+    StartofFiscalYear = 1, // set the month number that is start of the financial year. example; if fiscal year start is July, value is 7
+    firstDayofWeek = Day.Monday, // set the week's start day, values: Day.Monday, Day.Sunday....
+
+    FromDate = #date(FromYear,1,1), // First date of calendar
+    ToDate = #date(ToYear,12,31), // Last date of calendar
+    // CONFIGURATION END
+
     Source=List.Dates(
         FromDate,
         Duration.Days(ToDate-FromDate)+1,
