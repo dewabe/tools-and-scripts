@@ -155,7 +155,8 @@ let
                 [Day of Week] = Number.Mod(5 + setting_FirstDayOfWeek, 7) 
                 or [Day of Week] = Number.Mod(4 + setting_FirstDayOfWeek, 7) 
             then false 
-            else true
+            else true,
+            type logical
     )
 
 in
