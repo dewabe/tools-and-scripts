@@ -8,17 +8,17 @@ let
 
     // ********************
     // SETTINGS START
-    setting_FromDate =                  null,       // Keep null if you want the calendar to start on January 1st of the year defined by the setting_FromYear parameter
-                                                    // If specified, the value must be in the format: #date(2014, 4, 13)
-    setting_ToDate =                    null,       // Keep null if you want the calendar to end on December 31st of the year defined by the setting_ToYear parameter
-                                                    // If specified, the value must be in the format: #date(2023, 7, 2)
-    setting_FromYear =                  2014,       // The starting year for the calendar table.
-    setting_ToYear =                    2024,       // The ending year for the calendar table.
-    setting_FirstDayOfWeek =            Day.Monday, // Define the first day of the week in the calendar table.
-    setting_StartofFiscalYear =         1,          // Set the month number that is the start of the financial year. Example: if fiscal year starts in July, the value would be 7.
-    setting_Midsummer_OfficeClosed =    true,       // Set to true if the office is closed on Midsummer Day. If the office is open, set to false. 
-                                                    // Note: If the office remains open on Midsummer Day, the same applies to Midsummer Eve.
-    setting_MidsummerEve_OfficeClosed = true,       // Set to true if the office is closed on Midsummer Eve, false if it remains open.
+    setting_FromDate =                  _MinDate,       // Keep null if you want the calendar to start on January 1st of the year defined by the setting_FromYear parameter
+                                                        // If specified, the value must be in the format: #date(2014, 4, 13)
+    setting_ToDate =                    _MaxDate,       // Keep null if you want the calendar to end on December 31st of the year defined by the setting_ToYear parameter
+                                                        // If specified, the value must be in the format: #date(2023, 7, 2)
+    setting_FromYear =                  2024,           // The starting year for the calendar table.
+    setting_ToYear =                    2026,           // The ending year for the calendar table.
+    setting_FirstDayOfWeek =            Day.Monday,     // Define the first day of the week in the calendar table.
+    setting_StartofFiscalYear =         1,              // Set the month number that is the start of the financial year. Example: if fiscal year starts in July, the value would be 7.
+    setting_Midsummer_OfficeClosed =    true,           // Set to true if the office is closed on Midsummer Day. If the office is open, set to false. 
+                                                        // Note: If the office remains open on Midsummer Day, the same applies to Midsummer Eve.
+    setting_MidsummerEve_OfficeClosed = true,           // Set to true if the office is closed on Midsummer Eve, false if it remains open.
     // List of fixed public holidays in Finland. Should be easy to modified for other countries as well
     // Format: month, day
     FixedOfficeClosedDates = {
@@ -99,7 +99,25 @@ let
     #"Inserted Start of Quarter" = Table.AddColumn(#"Inserted Quarter", "Start of Quarter", each Date.StartOfQuarter([Date]), type date),
     #"Inserted End of Quarter" = Table.AddColumn(#"Inserted Start of Quarter", "End of Quarter", each Date.EndOfQuarter([Date]), type date),
     #"Inserted Week of Year" = Table.AddColumn(#"Inserted End of Quarter", "Week of Year", each Date.WeekOfYear([Date], setting_FirstDayOfWeek), Int64.Type),
-    #"Inserted Week of Month" = Table.AddColumn(#"Inserted Week of Year", "Week of Month", each Date.WeekOfMonth([Date], setting_FirstDayOfWeek), Int64.Type),
+    // Date.WeekOfYear does not always work properly when the year changes during the week. The following fix complies with ISO 8601.
+    #"Inserted Week of Year ISO" = Table.AddColumn(
+        #"Inserted Week of Year", 
+        "Week of Year ISO", 
+        each 
+            let
+                currentDate = [Date],
+                firstThursday = Date.AddDays(Date.EndOfYear(currentDate), 3 - Date.DayOfWeek(Date.EndOfYear(currentDate), Day.Monday)),
+                startOfISOYear = Date.AddDays(firstThursday, -Date.DayOfWeek(firstThursday, Day.Monday)),
+                weekNumber =
+                    if currentDate >= #date(Date.Year(currentDate), 12, 29) and [Day of Week] <= 3 then
+                        (Number.RoundDown(Duration.Days(currentDate - startOfISOYear) / 7) + 1)
+                    else
+                        [Week of Year]
+            in
+                weekNumber, 
+        Int64.Type
+    ),
+    #"Inserted Week of Month" = Table.AddColumn(#"Inserted Week of Year ISO", "Week of Month", each Date.WeekOfMonth([Date], setting_FirstDayOfWeek), Int64.Type),
     #"Inserted Start of Week" = Table.AddColumn(#"Inserted Week of Month", "Start of Week", each Date.StartOfWeek([Date], setting_FirstDayOfWeek), type date),
     #"Inserted End of Week" = Table.AddColumn(#"Inserted Start of Week", "End of Week", each Date.EndOfWeek([Date], setting_FirstDayOfWeek), type date),
     FiscalMonthBaseIndex = 13 - setting_StartofFiscalYear,
@@ -157,7 +175,14 @@ let
             then false 
             else true,
             type logical
+    ),
+    // A workaround is needed to sort week numbering correctly when the year changes during the week
+    #"Inserted Adjusted Week Year" = Table.AddColumn(#"Inserted Is Office Open", "Adjusted Week Year",
+        each
+            if [Week of Year] <> [Week of Year ISO] and [Day of Week] <= 3 then
+                [Year] + 1
+            else
+                [Year]
     )
-
 in
-    #"Inserted Is Office Open"
+    #"Inserted Adjusted Week Year"
