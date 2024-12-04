@@ -8,9 +8,9 @@ let
 
     // ********************
     // SETTINGS START
-    setting_FromDate =                  _MinDate,       // Keep null if you want the calendar to start on January 1st of the year defined by the setting_FromYear parameter
+    setting_FromDate =                  null,           // Keep null if you want the calendar to start on January 1st of the year defined by the setting_FromYear parameter
                                                         // If specified, the value must be in the format: #date(2014, 4, 13)
-    setting_ToDate =                    _MaxDate,       // Keep null if you want the calendar to end on December 31st of the year defined by the setting_ToYear parameter
+    setting_ToDate =                    null,           // Keep null if you want the calendar to end on December 31st of the year defined by the setting_ToYear parameter
                                                         // If specified, the value must be in the format: #date(2023, 7, 2)
     setting_FromYear =                  2024,           // The starting year for the calendar table.
     setting_ToYear =                    2026,           // The ending year for the calendar table.
